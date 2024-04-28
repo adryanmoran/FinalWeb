@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil</title>
+</head>
+<body>
+    <h1>Perfil</h1>
+    <h2>Datos Personales</h2>
+    <p><strong>Nombre:</strong> {{ busqueda_perfil.nombre }}</p>
+    <p><strong>Apellido Paterno:</strong> {{ busqueda_perfil.apellidoPaterno }}</p>
+    <p><strong>Apellido Materno:</strong> {{ busqueda_perfil.apellidoMaterno }}</p>
+    <p><strong>Correo Electrónico:</strong> {{ busqueda_perfil.correo_electronico }}</p>
+    <p><strong>Teléfono:</strong> {{ busqueda_perfil.telefono }}</p>
+
+    <h2>Perfil VARK</h2>
+    <p><strong>Mayor Modo:</strong> {{ mayor_modo }}</p>
+    <ul>
+        {% for key, value in perfil_vark.items() %}
+        <li>{{ key }}: {{ value }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Categoría del Perfil</h2>
+    <p><strong>Categoría:</strong> {{ categoria }}</p>
+
+    <h2>Información Adicional</h2>
+    <p>{{ informacion_adicional }}</p>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sección {{ seccion }}</title>
+</head>
+<body>
+    <h1>Sección {{ seccion }}</h1>
+    <form action="/seccion{{ seccion }}" method="POST">
+        {% for pregunta in preguntas %}
+            <label for="respuesta_{{ loop.index }}">{{ pregunta }}</label><br>
+            <input type="number" id="respuesta_{{ loop.index }}" name="respuesta_{{ loop.index }}" required><br><br>
+        {% endfor %}
+        <button type="submit">Siguiente</button>
+    </form>
+</body>
+</html>

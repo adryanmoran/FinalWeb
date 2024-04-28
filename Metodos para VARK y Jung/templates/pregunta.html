@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pregunta</title>
+</head>
+<body>
+    <h1>Pregunta</h1>
+    <h2>{{ pregunta.enunciado }}</h2>
+    <form action="{{ url_for('guardar_respuesta') }}" method="post">
+        {% for opcion in opciones %}
+        <input type="radio" id="{{ opcion.opcion }}" name="opcion" value="{{ opcion.opcion }}">
+        <label for="{{ opcion.opcion }}">{{ opcion.respuesta_texto }}</label><br>
+        {% endfor %}
+        <br>
+        <input type="submit" value="Guardar Respuesta">
+    </form>
+</body>
+</html>

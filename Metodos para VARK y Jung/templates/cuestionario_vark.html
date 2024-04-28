@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario VARK</title>
+</head>
+<body>
+    <h1>Cuestionario VARK</h1>
+    <form action="{{ url_for('cuestionario_vark') }}" method="POST">
+        <p>{{ pregunta }}</p>
+        {% for opcion in opciones %}
+            <input type="radio" id="{{ opcion[0] }}" name="respuesta" value="{{ opcion[0] }}">
+            <label for="{{ opcion[0] }}">{{ opcion[1] }}</label><br>
+        {% endfor %}
+        <button type="submit">Siguiente</button>
+    </form>
+</body>
+</html>
