@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Encontrado</title>
+</head>
+<body>
+    <h1>Perfil Encontrado</h1>
+    
+    <h2>Información del Perfil:</h2>
+    <p><strong>Nombre:</strong> {{ perfil.nombre }} {{ perfil.apellidoPaterno }} {{ perfil.apellidoMaterno }}</p>
+    <p><strong>Correo Electrónico:</strong> {{ perfil.correo_electronico }}</p>
+    <p><strong>Teléfono:</strong> {{ perfil.telefono }}</p>
+    <p><strong>Puesto:</strong> {{ perfil.puesto.puesto }}</p>
+
+    <h2>Resultados del Test VARK:</h2>
+    <p><strong>V:</strong> {{ resultado_vark.V }}</p>
+    <p><strong>A:</strong> {{ resultado_vark.A }}</p>
+    <p><strong>R:</strong> {{ resultado_vark.R }}</p>
+    <p><strong>K:</strong> {{ resultado_vark.K }}</p>
+
+    <h2>Resultado del Test de Personalidad Jung:</h2>
+    <p><strong>Categoría:</strong> {{ categoria }}</p>
+
+    <!-- Botón para descargar el PDF -->
+    <form action="/buscar_perfil" method="POST">
+        <input type="hidden" name="correo" value="{{ perfil.correo_electronico }}">
+        <button type="submit">Descargar PDF</button>
+    </form>
+</body>
+</html>

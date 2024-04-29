@@ -1,0 +1,25 @@
+@app.route('/buscar_perfil', methods=['GET', 'POST'])
+def buscar_perfil():
+    if request.method == 'POST':
+        correo = request.form['correo']
+
+        # Buscar el perfil por correo electrónico
+        perfil = session_db.query(Perfil).filter_by(correo_electronico=correo).first()
+
+        if perfil:
+            # Obtener el resultado del test VARK
+            resultado_vark = session_db.query(ResultadoVark).filter_by(id_persona=perfil.id_perfil).first()
+
+            # Obtener el resultado del test de personalidad Jung
+            categoria = session_db.query(CategoriaPerfil.categoria).filter_by(id_perfil=perfil.id_perfil).scalar()
+
+            if resultado_vark and categoria:
+                return render_template('perfil_encontrado.html', perfil=perfil, resultado_vark=resultado_vark, categoria=categoria)
+            else:
+                flash('No se encontraron resultados para este perfil.', 'error')
+                return render_template('buscar_perfil.html')  # Redireccionar al mismo formulario de búsqueda
+        else:
+            flash('No se encontró ningún perfil con este correo electrónico.', 'error')
+            return render_template('buscar_perfil.html')  # Redireccionar al mismo formulario de búsqueda
+    else:
+        return render_template('buscar_perfil.html')
