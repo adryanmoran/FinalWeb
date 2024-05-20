@@ -1,0 +1,96 @@
+-- Eliminar la base de datos si existe
+DROP DATABASE IF EXISTS preguntas12;
+
+-- Crear la base de datos
+CREATE DATABASE preguntas12;
+
+-- Conectar a la base de datos
+USE preguntas12;
+
+-- Crear la tabla Puestos
+CREATE TABLE IF NOT EXISTS Puestos (
+    id_puesto INT AUTO_INCREMENT PRIMARY KEY,
+    puesto VARCHAR(50)
+);
+
+-- Crear la tabla Perfil
+CREATE TABLE IF NOT EXISTS Perfil (
+    id_persona INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50),
+    apellidoPaterno VARCHAR(50),
+    apellidoMaterno VARCHAR(50),
+    telefono VARCHAR(20),
+    correo_electronico VARCHAR(100),
+    direccion VARCHAR(255),
+    id_puesto INT,
+    FOREIGN KEY (id_puesto) REFERENCES Puestos(id_puesto)
+);
+
+-- Insertar un registro de ejemplo en la tabla Perfil
+INSERT INTO Perfil (nombre, apellidoPaterno, apellidoMaterno, telefono, correo_electronico, direccion, id_puesto) 
+VALUES ('Nombre', 'ApellidoPaterno', 'ApellidoMaterno', '1234567890', 'correo@example.com', 'Dirección 123', 1);
+
+-- Crear la tabla Preguntas
+CREATE TABLE IF NOT EXISTS Preguntas (
+    id_pregunta INT AUTO_INCREMENT PRIMARY KEY,
+    enunciado VARCHAR(255)
+);
+
+-- Insertar preguntas de ejemplo
+INSERT INTO Preguntas (enunciado) VALUES
+('¿Prefieres leer el manual de instrucciones o que alguien te lo explique?'),
+('Cuando recuerdas información, ¿es más fácil para ti visualizarla o hablar sobre ella?'),
+('¿Te ayuda hacer diagramas o mapas mentales para entender conceptos nuevos?');
+
+-- Crear la tabla Opciones_Respuesta
+CREATE TABLE IF NOT EXISTS Opciones_Respuesta (
+    id_opcion INT AUTO_INCREMENT PRIMARY KEY,
+    id_pregunta INT,
+    opcion CHAR(1),
+    respuesta_texto VARCHAR(255),
+    FOREIGN KEY (id_pregunta) REFERENCES Preguntas(id_pregunta)
+);
+
+-- Insertar opciones de respuesta para las preguntas
+INSERT INTO Opciones_Respuesta (id_pregunta, opcion, respuesta_texto) VALUES
+(1, 'a', 'Leer el manual'),
+(1, 'b', 'Que alguien me lo explique'),
+(2, 'a', 'Visualizar la información'),
+(2, 'b', 'Hablar sobre la información'),
+(3, 'a', 'Sí'),
+(3, 'b', 'No');
+
+
+
+-- Insertar varios departamentos en la tabla Puestos
+INSERT INTO Puestos (puesto) VALUES
+('Calidad'),
+('Operario'),
+('Supervisor'),
+('Soldador'),
+('Limpieza'),
+('Ingeniería'),
+('Mantenimiento'),
+('Administración'),
+('Recursos Humanos');
+
+-- Agregar la tabla para almacenar las respuestas del cuestionario VARK
+CREATE TABLE IF NOT EXISTS respuestas_vark (
+    id_respuesta INT AUTO_INCREMENT PRIMARY KEY,
+    id_persona INT,
+    id_pregunta INT,
+    respuesta CHAR(1),
+    FOREIGN KEY (id_persona) REFERENCES Perfil(id_persona),
+    FOREIGN KEY (id_pregunta) REFERENCES Preguntas(id_pregunta)
+);
+
+-- Crear la tabla Resultado_VARK
+CREATE TABLE IF NOT EXISTS Resultado_VARK (
+    id_resultado INT AUTO_INCREMENT PRIMARY KEY,
+    id_persona INT,
+    V INT,
+    A INT,
+    R INT,
+    K INT,
+    FOREIGN KEY (id_persona) REFERENCES Perfil(id_persona)
+);

@@ -1,0 +1,391 @@
+from flask import Flask, request, redirect, url_for, render_template, flash
+from sqlalchemy import func
+from model.model import Database, Perfil, Puesto, CuestionarioJung,CategoriaJung
+from model.model import Pregunta,ResultadoVark,RespuestaVark
+app = Flask(__name__)
+app.secret_key = 'tu_llave_secreta'
+
+# Configuramos la sesión de SQLAlchemy utilizando la clase Database Singleton
+session_db = Database.get_instance().get_session()
+db = Database.get_instance()
+
+preguntas = session_db.query(Pregunta).all()
+
+# Tabla VARK
+tabla = [
+    {"#": 1, "V": "b", "A": "a", "R": "c", "K": "d"},
+    {"#": 2, "V": "b", "A": "a", "R": "a", "K": "b"},
+    {"#": 3, "V": "c", "A": "d", "R": "c", "K": "a"},
+    {"#": 4, "V": "c", "A": "a", "R": "b", "K": "a"},
+    {"#": 5, "V": "d", "A": "c", "R": "b", "K": "a"},
+    {"#": 6, "V": "b", "A": "d", "R": "c", "K": "a"},
+    {"#": 7, "V": "d", "A": "b", "R": "c", "K": "c"},
+    {"#": 8, "V": "d", "A": "d", "R": "a", "K": "c"},
+    {"#": 9, "V": "a", "A": "b", "R": "d", "K": "c"},
+    {"#": 10, "V": "b", "A": "b", "R": "c", "K": "d"},
+    {"#": 11, "V": "d", "A": "c", "R": "b", "K": "a"},
+    {"#": 12, "V": "c", "A": "a", "R": "b", "K": "d"},
+    {"#": 13, "V": "d", "A": "c", "R": "b", "K": "a"},
+    {"#": 14, "V": "c", "A": "d", "R": "b", "K": "a"},
+    {"#": 15, "V": "d", "A": "c", "R": "a", "K": "b"},
+    {"#": 16, "V": "d", "A": "c", "R": "a", "K": "b"}
+]
+
+pregunta_index = 0
+id_persona = None
+
+
+@app.route('/')
+def index():
+    return redirect(url_for('registrar_perfil'))
+
+@app.route('/registrar_perfil', methods=['GET', 'POST'])
+def registrar_perfil():
+    global id_persona  # Agregar global id_persona para poder modificarla
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        apellido_paterno = request.form.get('apellido_paterno')
+        apellido_materno = request.form.get('apellido_materno')
+        telefono = request.form.get('telefono')
+        correo = request.form.get('correo')
+        id_puesto = request.form.get('id_puesto')
+
+        if nombre and apellido_paterno and apellido_materno and telefono and correo and id_puesto:
+            try:
+                id_puesto = int(id_puesto)
+                nuevo_perfil = Perfil(
+                    nombre=nombre,
+                    apellidoPaterno=apellido_paterno,
+                    apellidoMaterno=apellido_materno,
+                    telefono=telefono,
+                    correo_electronico=correo,
+                    id_puesto=id_puesto
+                )
+                session_db.add(nuevo_perfil)
+                session_db.commit()
+                flash('Perfil registrado correctamente', 'success')
+
+                # Actualizar id_persona con el ID del perfil registrado
+                id_persona = nuevo_perfil.id_perfil
+
+                return redirect(url_for('menu_cuestionario', id_perfil=nuevo_perfil.id_perfil))
+            except ValueError:
+                flash('ID de puesto no válido.', 'danger')
+        else:
+            flash('Todos los campos son obligatorios.', 'danger')
+
+    puestos = session_db.query(Puesto).all()
+    return render_template('registrar_perfil.html', puestos=puestos)
+
+#----------------Menus-------------------------------------------------------------------------#
+@app.route('/menu_cuestionario/<int:id_perfil>')
+def menu_cuestionario(id_perfil):
+    perfil = session_db.query(Perfil).filter_by(id_perfil=id_perfil).first()
+    return render_template('menu_cuestionario.html', perfil=perfil)
+
+
+@app.route('/menu_secciones')
+def menu_secciones():
+    return render_template('menu_secciones.html')
+
+def obtener_perfil(id_perfil=None):
+    if id_perfil is not None:
+        return session_db.query(Perfil).filter_by(id_perfil=id_perfil).first()
+    
+    max_id_perfil = session_db.query(func.max(Perfil.id_perfil)).scalar()
+    if max_id_perfil:
+        return session_db.query(Perfil).filter_by(id_perfil=max_id_perfil).first()
+    return None
+
+def obtener_puesto(id_puesto=None):
+    if id_puesto is not None:
+        return session_db.query(Puesto).filter_by(id_puesto=id_puesto).first()
+    
+    max_id_puesto = session_db.query(func.max(Puesto.id_puesto)).scalar()
+    if max_id_puesto:
+        return session_db.query(Puesto).filter_by(id_puesto=max_id_puesto).first()
+    return None
+#----------------ParteVark---------------------------------------------------------------------#
+@app.route('/mostrar_siguiente_pregunta')
+def mostrar_siguiente_pregunta():
+    global pregunta_index
+
+    if pregunta_index < len(preguntas):
+        pregunta = preguntas[pregunta_index]
+        opciones_pregunta = [opcion for opcion in pregunta.opciones]
+        pregunta_index += 1
+        return render_template('pregunta.html', pregunta=pregunta, opciones=opciones_pregunta)
+    else:
+        return redirect(url_for('calcular_perfil'))
+
+
+@app.route('/guardar_respuesta', methods=['POST'])
+def guardar_respuesta():
+    global pregunta_index, id_persona
+    respuesta = request.form['opcion']
+    guardar_respuesta_db(preguntas[pregunta_index - 1].id_pregunta, respuesta, id_persona)
+    return redirect(url_for('mostrar_siguiente_pregunta'))
+
+def guardar_respuesta_db(id_pregunta, respuesta, id_persona):
+    try:
+        respuesta = RespuestaVark(id_persona=id_persona, id_pregunta=id_pregunta, respuesta=respuesta)
+        session_db.add(respuesta)
+        session_db.commit()
+    except Exception as e:
+        flash(f"No se pudo guardar la respuesta: {e}", 'error')
+
+@app.route('/calcular_perfil')
+def calcular_perfil():
+    global id_persona
+
+    respuestas = session_db.query(RespuestaVark).filter_by(id_persona=id_persona).all()
+    
+    perfil = {"V": 0, "A": 0, "R": 0, "K": 0}
+    for respuesta in respuestas:
+        modo = obtener_modo_vark(respuesta.id_pregunta, respuesta.respuesta)
+        if modo:
+            perfil[modo] += 1
+    
+    # Insertar el perfil VARK en la tabla Resultado_VARK
+    try:
+        resultado_vark = ResultadoVark(id_persona=id_persona, V=perfil['V'], A=perfil['A'], R=perfil['R'], K=perfil['K'])
+        session_db.add(resultado_vark)
+        session_db.commit()
+        flash("Perfil VARK calculado y guardado correctamente.", 'success')
+        return redirect(url_for('mostrar_resultado'))
+    except Exception as e:
+        flash(f"No se pudo guardar el perfil VARK en la base de datos: {e}", 'error')
+        return redirect(url_for('index'))
+
+def obtener_modo_vark(id_pregunta, respuesta):
+    for fila in tabla:
+        if fila["#"] == id_pregunta:
+            if respuesta == fila["V"]:
+                return "V"
+            elif respuesta == fila["A"]:
+                return "A"
+            elif respuesta == fila["R"]:
+                return "R"
+            elif respuesta == fila["K"]:
+                return "K"
+    return None
+
+@app.route('/mostrar_resultado')
+def mostrar_resultado():
+    global id_persona
+
+    try:
+        perfil_vark = session_db.query(ResultadoVark).filter_by(id_persona=id_persona).first()
+        return render_template('resultado.html', perfil_vark=perfil_vark)
+    except Exception as e:
+        flash(f"No se pudo obtener el perfil VARK: {e}", 'error')
+        return redirect(url_for('index'))
+#----------------Parte del jung----------------------------------------------------------------#
+def guardar_cuestionario_jung(seccion1_suma, seccion2_suma, id_perfil, id_puesto):
+    if seccion1_suma > seccion2_suma:
+        seccion = "Sección 1"
+        mayor_puntuacion = seccion1_suma
+    else:
+        seccion = "Sección 2"
+        mayor_puntuacion = seccion2_suma
+    
+    cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion=seccion, puntos=mayor_puntuacion)
+    session_db.add(cuestionario)
+    session_db.commit()
+    
+@app.route('/Seccion1_2')
+def seccion_1_2():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion1_2.html', perfil=perfil, puesto=puesto)
+
+@app.route('/sumar_secciones', methods=['POST'])
+def sumar_secciones():
+    seccion1_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(1, 10)])
+    seccion2_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(10, 19)])
+
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    if id_perfil and id_puesto:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_jung(seccion1_suma, seccion2_suma, id_perfil, id_puesto)
+            return redirect(url_for('seccion_3_4'))
+        except ValueError:
+            flash("ID de perfil o puesto no son valores enteros.", 'danger')
+    else:
+        flash("No se proporcionaron ID de perfil o puesto.", 'danger')
+
+    return redirect(url_for('seccion_1_2'))
+
+@app.route('/Seccion3_4')
+def seccion_3_4():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion3_4.html', perfil=perfil, puesto=puesto)
+
+def guardar_cuestionario_seccion3_4(seccion3_suma, seccion4_suma, id_perfil, id_puesto):
+    if seccion3_suma > seccion4_suma:
+        seccion = "Sección 3"
+        mayor_puntuacion = seccion3_suma
+    else:
+        seccion = "Sección 4"
+        mayor_puntuacion = seccion4_suma
+    
+    cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion=seccion, puntos=mayor_puntuacion)
+    session_db.add(cuestionario)
+    session_db.commit()
+
+@app.route('/sumar_secciones3_4', methods=['POST'])
+def sumar_secciones3_4():
+    seccion3_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(1, 10)])
+    seccion4_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(10, 19)])
+
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    if id_perfil and id_puesto:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_seccion3_4(seccion3_suma, seccion4_suma, id_perfil, id_puesto)
+            return redirect(url_for('seccion_5_6'))
+        except ValueError:
+            flash("ID de perfil o puesto no son valores enteros.", 'danger')
+    else:
+        flash("No se proporcionaron ID de perfil o puesto.", 'danger')
+
+    return redirect(url_for('seccion_3_4'))
+
+@app.route('/Seccion5_6')
+def seccion_5_6():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion5_6.html', perfil=perfil, puesto=puesto)
+
+def guardar_cuestionario_seccion5_6(seccion5_suma, seccion6_suma, id_perfil, id_puesto):
+    if seccion5_suma > seccion6_suma:
+        seccion = "Sección 5"
+        mayor_puntuacion = seccion5_suma
+    else:
+        seccion = "Sección 6"
+        mayor_puntuacion = seccion6_suma
+    
+    cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion=seccion, puntos=mayor_puntuacion)
+    session_db.add(cuestionario)
+    session_db.commit()
+
+@app.route('/sumar_secciones5_6', methods=['POST'])
+def sumar_secciones5_6():
+    seccion5_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(37, 46)])
+    seccion6_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(46, 55)])
+
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    if id_perfil and id_puesto:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_seccion5_6(seccion5_suma, seccion6_suma, id_perfil, id_puesto)
+            return redirect(url_for('seccion_7_8'))
+        except ValueError:
+            flash("ID de perfil o puesto no son valores enteros.", 'danger')
+    else:
+        flash("No se proporcionaron ID de perfil o puesto.", 'danger')
+
+    return redirect(url_for('seccion_5_6'))
+
+@app.route('/Seccion7_8')
+def seccion_7_8():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion7_8.html', perfil=perfil, puesto=puesto)
+
+def guardar_cuestionario_seccion7_8(seccion7_suma, seccion8_suma, id_perfil, id_puesto):
+    if seccion7_suma > seccion8_suma:
+        seccion = "Sección 7"
+        mayor_puntuacion = seccion7_suma
+    else:
+        seccion = "Sección 8"
+        mayor_puntuacion = seccion8_suma
+    
+    cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion=seccion, puntos=mayor_puntuacion)
+    session_db.add(cuestionario)
+    session_db.commit()
+
+@app.route('/sumar_secciones7_8', methods=['POST'])
+def sumar_secciones7_8():
+    seccion7_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(55, 64)])
+    seccion8_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(64, 73)])
+
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    if id_perfil and id_puesto:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_seccion7_8(seccion7_suma, seccion8_suma, id_perfil, id_puesto)
+            asignar_categoria_perfil_actual(id_perfil,id_puesto)
+
+            return redirect(url_for('resultados'))
+        except ValueError:
+            flash("ID de perfil o puesto no son valores enteros.", 'danger')
+    else:
+        flash("No se proporcionaron ID de perfil o puesto.", 'danger')
+
+    return redirect(url_for('seccion_7_8'))
+
+@app.route('/resultados')
+def resultados():
+    perfil = obtener_perfil()  # Obtener el perfil del último registro
+    puesto = obtener_puesto()  # Obtener el puesto del último registro
+    cuestionarios = session_db.query(CuestionarioJung).filter_by(id_perfil=perfil.id_perfil).all()  # Obtener los cuestionarios para ese perfil
+
+    categoria_perfil = session_db.query(CategoriaJung).filter_by(id_perfil=perfil.id_perfil).first()  # Obtener la categoría del perfil
+
+    return render_template('resultados.html', perfil=perfil, puesto=puesto, cuestionarios=cuestionarios, categoria=categoria_perfil)
+
+
+def asignar_categoria_perfil_actual(id_perfil, id_puesto):
+    # Obtener todas las secciones asociadas al perfil actual
+    secciones = session_db.query(CuestionarioJung.seccion).filter_by(id_perfil=id_perfil).all()
+    
+    # Inicializar una lista para almacenar las secciones
+    secciones_perfil = [seccion[0] for seccion in secciones]
+    
+    # Inicializar la variable de categoría
+    categoria = None
+    
+    # Asignar categoría basada en las combinaciones de secciones del perfil
+    if "Sección 3" in secciones_perfil and "Sección 6" in secciones_perfil:
+        categoria = "Apoyo"
+    elif "Sección 3" in secciones_perfil and "Sección 5" in secciones_perfil:
+        categoria = "Técnico analítico"
+    elif "Sección 4" in secciones_perfil and "Sección 5" in secciones_perfil:
+        categoria = "Controlador"
+    elif "Sección 4" in secciones_perfil and "Sección 6" in secciones_perfil:
+        categoria = "Social"
+    elif "Sección 5" in secciones_perfil and "Sección 4" in secciones_perfil:
+        categoria = "Técnico analítico"  # Este es redundante porque ya se maneja arriba
+    elif "Sección 5" in secciones_perfil and "Sección 3" in secciones_perfil:
+        categoria = "Técnico analítico"  # Este es redundante porque ya se maneja arriba
+    elif "Sección 5" in secciones_perfil and "Sección 4" in secciones_perfil:
+        categoria = "Controlador"  # Este es redundante porque ya se maneja arriba
+    elif "Sección 6" in secciones_perfil and "Sección 3" in secciones_perfil:
+        categoria = "Apoyo"  # Este es redundante porque ya se maneja arriba
+    elif "Sección 6" in secciones_perfil and "Sección 4" in secciones_perfil:
+        categoria = "Social"  # Este es redundante porque ya se maneja arriba
+    
+    # Insertar la categoría en la tabla CategoriaJung si se ha asignado una categoría
+    if categoria:
+        nuevo_categoria = CategoriaJung(id_perfil=id_perfil, id_puesto=id_puesto, categoria=categoria)
+        session_db.add(nuevo_categoria)
+        session_db.commit()
+
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -1,0 +1,174 @@
+CREATE DATABASE IF NOT EXISTS jun5;
+
+-- Seleccionar la base de datos
+USE jun5;
+
+-- Crear la tabla Puestos
+CREATE TABLE IF NOT EXISTS Puestos (
+    id_puesto INT AUTO_INCREMENT PRIMARY KEY,
+    puesto VARCHAR(50)
+);
+
+-- Crear la tabla Perfil
+CREATE TABLE IF NOT EXISTS Perfil (
+    id_perfil INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50),
+    apellidoPaterno VARCHAR(50),
+    apellidoMaterno VARCHAR(50),
+    telefono VARCHAR(20),
+    correo_electronico VARCHAR(100),
+    direccion VARCHAR(255),
+    id_puesto INT,
+    FOREIGN KEY (id_puesto) REFERENCES Puestos(id_puesto)
+);
+
+-- Crear la tabla para almacenar las secciones
+CREATE TABLE secciones (
+    id_seccion INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_seccion VARCHAR(50)
+);
+
+-- Insertar las secciones
+INSERT INTO secciones (nombre_seccion) VALUES 
+('Seccion 1'),
+('Seccion 2'),
+('Seccion 3'),
+('Seccion 4');
+
+-- Crear la tabla para almacenar las preguntas y relacionarlas con las secciones
+CREATE TABLE preguntas (
+    id_pregunta INT AUTO_INCREMENT PRIMARY KEY,
+    pregunta VARCHAR(255),
+    id_seccion INT,
+    FOREIGN KEY (id_seccion) REFERENCES secciones(id_seccion)
+);
+
+-- Insertar las preguntas para cada sección
+INSERT INTO preguntas (pregunta, id_seccion) VALUES
+-- Seccion 1
+('Emprendero y entusiasta', 1),
+('Actua y luego piensa', 1),
+('piensa en voz alta', 1),
+('Tiene mucha energia', 1),
+('Prefiere hacer varias cosas a la vez', 1),
+('Habla mas que escucha', 1),
+('Es facil de conocer', 1),
+('Puede distrarse con facilidad ', 1),
+('Le gusta rodearse de gente', 1),
+-- Seccion 2
+('Reservado', 2),
+('Piensa y luego actua', 2),
+('Piensa en voz baja', 2),
+('Energia tranquila', 2),
+('Prefiere concentrarse en una cosa', 2),
+('Escucha mas que habla', 2),
+('lleva una vida muy privada', 2),
+('Gran capacidad de concentracion', 2),
+('Se siente a gusto a solas', 2),
+-- Seccion 3
+('Confia en la experiencia propia', 3),
+('Realista,ve lo que es', 3),
+('Utiliza destrezas ya aprendidas', 3),
+('Prefiere instrucciones detalladas', 3),
+('Ve detalles y recuerda hechos', 3),
+('Admira Soluciones practicas', 3),
+('Se concentra en hechos especificos', 3),
+('Tranaja a un ritmo uniforme', 3),
+('Vive en el aqui y en ahora', 3),
+-- Seccion 4
+('Confia en sus instintos', 4),
+('Imaginativo, ve lo que podria ser', 4),
+('Prefiere desarrollar nuevas destrzas', 4),
+('Gusta descubir las cosas por si mismo', 4),
+('Percibe cualquier cosa nueva o diferente', 4),
+('Admira ideas creativas', 4),
+('Tienes ideas y vision de conjunto', 4),
+('Trabaja en rafagas de energia', 4),
+('Piensa en las implicaciones futuras', 4);
+
+
+-- Crear la tabla para almacenar las respuestas de los perfiles a las preguntas
+CREATE TABLE respuestas (
+    id_respuesta INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    id_pregunta INT,
+    respuesta INT,
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil),
+    FOREIGN KEY (id_pregunta) REFERENCES preguntas(id_pregunta)
+);
+
+-- Crear la tabla para almacenar los puntos totales por sección para cada perfil
+CREATE TABLE puntos_totales_seccion (
+    id_puntos_totales_seccion INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    id_seccion INT,
+    puntos_totales INT,
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil),
+    FOREIGN KEY (id_seccion) REFERENCES secciones(id_seccion)
+);
+
+-- Insertar las secciones restantes
+INSERT INTO secciones (nombre_seccion) VALUES 
+('Seccion 5'),
+('Seccion 6'),
+('Seccion 7'),
+('Seccion 8');
+
+-- Insertar las preguntas para cada sección
+INSERT INTO preguntas (pregunta, id_seccion) VALUES
+-- Seccion 5
+('Tiende a ver defectos ajenos', 5),
+('Se convence con la logica', 5),
+('Aparenta ser frio y recervado', 5),
+('Toma decsiones objetivamente', 5),
+('No toma las cosas personalmente', 5),
+('Es motivado por las metas', 5),
+('Honesto y directo', 5),
+('Valora la honestidad y la justicia', 5),
+('Argumenta o debate por diversion', 5),
+-- Seccion 6
+('Tiende a ver cualidades ajenas', 6),
+('Se convence por sus sensaciones', 6),
+('Aparenta ser calidad y amistoso', 6),
+('Decide por su valores y sensaciones', 6),
+('Toma muchas cosas personalmente', 6),
+('Es motivado por el reconocimiento', 6),
+('Diplomatico y con mucho tacto', 6),
+('Valora la armonia y la compasion', 6),
+('Evita discusiones y conflictos', 6),
+-- Seccion 7
+('Tranajar primero,jugar despues', 7),
+('Prefiere terminar proyectos', 7),
+('Se siente a gusto llevando sus agendas', 7),
+('Le gusta tomar decisiones', 7),
+('Presta atencion al tiempo,puntualidad', 7),
+('Le gusta hacer y atenerse a planes', 7),
+('Quiere que las cosas se decidan', 7),
+('Serio y convencional', 7),
+('Justifica la mayoria de las reglas', 7),
+-- Seccion 8
+('Jugar primero, trabajar despues', 8),
+('Prefiere empezar proyectos', 8),
+('Desea la libertad de la espontaneidad', 8),
+('Pospone algunas decisiones,si puede', 8),
+('Menos consciente del tiempo, impuntal', 8),
+('Le gusta la flexibilidad en los planes', 8),
+('Quiere tener opciones abiertas', 8),
+('Relajado y poco convencional', 8),
+('Cuestiona mucho las reglas', 8);
+
+CREATE TABLE IF NOT EXISTS comparacion_secciones (
+    id_comparacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    seccion_mayor VARCHAR(50),
+    puntos_seccion_mayor INT,
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil)
+);
+
+
+CREATE TABLE categoria_perfil (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    categoria VARCHAR(100),
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil)
+);

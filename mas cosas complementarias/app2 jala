@@ -1,0 +1,108 @@
+from flask import Flask, request, redirect, url_for, render_template, flash
+from model.model import Database, Perfil, Puesto, CuestionarioJung
+
+app = Flask(__name__)
+app.secret_key = 'tu_llave_secreta'
+
+# Configuramos la sesión de SQLAlchemy utilizando la clase Database Singleton
+session_db = Database.get_instance().get_session()
+
+@app.route('/')
+def index():
+    return redirect(url_for('registrar_perfil'))
+
+@app.route('/registrar_perfil', methods=['GET', 'POST'])
+def registrar_perfil():
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        apellido_paterno = request.form['apellido_paterno']
+        apellido_materno = request.form['apellido_materno']
+        telefono = request.form['telefono']
+        correo = request.form['correo']
+        id_puesto = int(request.form['id_puesto'])
+
+        nuevo_perfil = Perfil(nombre=nombre, 
+                              apellidoPaterno=apellido_paterno, 
+                              apellidoMaterno=apellido_materno, 
+                              telefono=telefono, 
+                              correo_electronico=correo, 
+                              id_puesto=id_puesto)
+        session_db.add(nuevo_perfil)
+        session_db.commit()
+
+        flash('Perfil registrado correctamente', 'success')
+        return redirect(url_for('menu_cuestionario', id_perfil=nuevo_perfil.id_perfil))
+    else:
+        puestos = session_db.query(Puesto).all()
+        return render_template('registrar_perfil.html', puestos=puestos)
+
+@app.route('/menu_cuestionario/<int:id_perfil>')
+def menu_cuestionario(id_perfil):
+    perfil = session_db.query(Perfil).filter_by(id_perfil=id_perfil).first()
+    return render_template('menu_cuestionario.html', perfil=perfil)
+
+
+@app.route('/menu_secciones')
+def menu_secciones():
+    return render_template('menu_secciones.html')
+
+def obtener_perfil(id_perfil=None):
+    # Si se proporciona un id_perfil, recuperar el perfil por su ID
+    if id_perfil is not None:
+        perfil = session_db.query(Perfil).filter_by(id_perfil=id_perfil).first()
+    # Si no se proporciona un id_perfil, recuperar cualquier perfil disponible
+    else:
+        perfil = session_db.query(Perfil).first()
+    return perfil
+
+def obtener_puesto(id_puesto=None):
+    # Si se proporciona un id_puesto, recuperar el puesto por su ID
+    if id_puesto is not None:
+        puesto = session_db.query(Puesto).filter_by(id_puesto=id_puesto).first()
+    # Si no se proporciona un id_puesto, recuperar cualquier puesto disponible
+    else:
+        puesto = session_db.query(Puesto).first()
+    return puesto
+
+@app.route('/Seccion1_2')
+def seccion_1_2():
+    # Obtener el perfil y el puesto correspondientes
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion1_2.html', perfil=perfil, puesto=puesto)
+
+def guardar_cuestionario_jung(seccion1_suma, seccion2_suma, id_perfil, id_puesto):
+    nuevo_cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion="Sección 1", puntos=seccion1_suma)
+    session_db.add(nuevo_cuestionario)
+
+    nuevo_cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion="Sección 2", puntos=seccion2_suma)
+    session_db.add(nuevo_cuestionario)
+
+    session_db.commit()
+
+@app.route('/sumar_secciones', methods=['POST'])
+def sumar_secciones():
+    seccion1_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(1, 10)])
+    seccion2_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(10, 19)])
+    
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    # Validar que id_perfil y id_puesto sean valores enteros y estén presentes
+    if id_perfil is not None and id_puesto is not None:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_jung(seccion1_suma, seccion2_suma, id_perfil, id_puesto)
+            mensaje = f"La suma de la Sección 1 es {seccion1_suma}, y la suma de la Sección 2 es {seccion2_suma}"
+        except ValueError:
+            mensaje = "Error: id_perfil o id_puesto no son valores enteros."
+    else:
+        mensaje = "Error: No se proporcionaron id_perfil o id_puesto en el formulario."
+
+    return mensaje
+
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

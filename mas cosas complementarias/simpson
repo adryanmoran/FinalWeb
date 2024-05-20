@@ -1,0 +1,81 @@
+
+def determinar_categoria(seccion_sumas):
+    resultados = {
+        'Seccion1': seccion_sumas[0],
+        'Seccion2': seccion_sumas[1],
+        'Seccion3': seccion_sumas[2],
+        'Seccion4': seccion_sumas[3],
+        'Seccion5': seccion_sumas[4],
+        'Seccion6': seccion_sumas[5],
+        'Seccion7': seccion_sumas[6],
+        'Seccion8': seccion_sumas[7]
+    }
+
+    secciones = {
+        'Seccion1_vs_Seccion2': 'Seccion1' if resultados['Seccion1'] > resultados['Seccion2'] else 'Seccion2',
+        'Seccion3_vs_Seccion4': 'Seccion3' if resultados['Seccion3'] > resultados['Seccion4'] else 'Seccion4',
+        'Seccion5_vs_Seccion6': 'Seccion5' if resultados['Seccion5'] > resultados['Seccion6'] else 'Seccion6',
+        'Seccion7_vs_Seccion8': 'Seccion7' if resultados['Seccion7'] > resultados['Seccion8'] else 'Seccion8'
+    }
+
+    # Asignar la categoría basada en las secciones dominantes
+    if 'Seccion3' in secciones.values() and 'Seccion5' in secciones.values():
+        categoria = 'tecnico analitico'
+    elif 'Seccion3' in secciones.values() and 'Seccion6' in secciones.values():
+        categoria = 'apoyo'
+    elif 'Seccion4' in secciones.values() and 'Seccion5' in secciones.values():
+        categoria = 'controlador'
+    elif 'Seccion4' in secciones.values() and 'Seccion3' in secciones.values():
+        categoria = 'social'
+    elif 'Seccion5' in secciones.values() and 'Seccion3' in secciones.values():
+        categoria = 'tecnico analitico'
+    elif 'Seccion5' in secciones.values() and 'Seccion4' in secciones.values():
+        categoria = 'controlador'
+    elif 'Seccion6' in secciones.values() and 'Seccion3' in secciones.values():
+        categoria = 'apoyo'
+    elif 'Seccion6' in secciones.values() and 'Seccion4' in secciones.values():
+        categoria = 'social'
+    else:
+        categoria = 'Sin categoría definida'
+
+    return secciones, categoria
+
+@app.route('/resultados')
+def resultados():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    cuestionarios = session_db.query(CuestionarioJung).filter_by(id_perfil=perfil.id_perfil, id_puesto=puesto.id_puesto).all()
+
+    # Sumar puntos por sección
+    seccion_sumas = [0] * 8
+    for cuestionario in cuestionarios:
+        if cuestionario.seccion == "Sección 1":
+            seccion_sumas[0] += cuestionario.puntos
+        elif cuestionario.seccion == "Sección 2":
+            seccion_sumas[1] += cuestionario.puntos
+        elif cuestionario.seccion == "Sección 3":
+            seccion_sumas[2] += cuestionario.puntos
+        elif cuestionario.seccion == "Sección 4":
+            seccion_sumas[3] += cuestionario.puntos
+        elif cuestionario.seccion == "Sección 5":
+            seccion_sumas[4] += cuestionario.puntos
+        elif cuestionario.seccion == "Sección 6":
+            seccion_sumas[5] += cuestionario.puntos
+        elif cuestionario.seccion == "Sección 7":
+            seccion_sumas[6] += cuestionario.puntos
+        elif cuestionario.seccion == "Sección 8":
+            seccion_sumas[7] += cuestionario.puntos
+
+    # Determinar la categoría
+    secciones, categoria = determinar_categoria(seccion_sumas)
+
+    return render_template('resultados.html', perfil=perfil, puesto=puesto, cuestionarios=cuestionarios, secciones=secciones, categoria=categoria)
+
+def guardar_categoria_jung(id_perfil, id_puesto, categoria):
+    nueva_categoria = CategoriaJung(
+        id_perfil=id_perfil,
+        id_puesto=id_puesto,
+        categoria=categoria
+    )
+    session_db.add(nueva_categoria)
+    session_db.commit()

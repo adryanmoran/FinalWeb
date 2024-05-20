@@ -1,0 +1,17 @@
+from flask import Flask, render_template, request
+
+app = Flask(__name__)
+
+@app.route('/sumar_secciones')
+def suma_1_2():
+    return render_template('seccion1_2.html')
+
+@app.route('/sumar_secciones', methods=['POST'])
+def sumar_secciones():
+    seccion1_suma = sum([int(request.form[f'pregunta{i}']) for i in range(1, 10)])
+    seccion2_suma = sum([int(request.form[f'pregunta{i}']) for i in range(10, 19)])
+    mensaje = f"La suma de la Sección 1 es {seccion1_suma}, y la suma de la Sección 2 es {seccion2_suma}"
+    return mensaje
+
+if __name__ == '__main__':
+    app.run(debug=True)

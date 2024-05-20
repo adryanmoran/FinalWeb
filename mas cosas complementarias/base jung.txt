@@ -1,0 +1,174 @@
+CREATE DATABASE IF NOT EXISTS jun3;
+
+-- Seleccionar la base de datos
+USE jun3;
+
+-- Crear la tabla Puestos
+CREATE TABLE IF NOT EXISTS Puestos (
+    id_puesto INT AUTO_INCREMENT PRIMARY KEY,
+    puesto VARCHAR(50)
+);
+
+-- Crear la tabla Perfil
+CREATE TABLE IF NOT EXISTS Perfil (
+    id_perfil INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50),
+    apellidoPaterno VARCHAR(50),
+    apellidoMaterno VARCHAR(50),
+    telefono VARCHAR(20),
+    correo_electronico VARCHAR(100),
+    direccion VARCHAR(255),
+    id_puesto INT,
+    FOREIGN KEY (id_puesto) REFERENCES Puestos(id_puesto)
+);
+
+-- Crear la tabla para almacenar las secciones
+CREATE TABLE secciones (
+    id_seccion INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_seccion VARCHAR(50)
+);
+
+-- Insertar las secciones
+INSERT INTO secciones (nombre_seccion) VALUES 
+('Seccion 1'),
+('Seccion 2'),
+('Seccion 3'),
+('Seccion 4');
+
+-- Crear la tabla para almacenar las preguntas y relacionarlas con las secciones
+CREATE TABLE preguntas (
+    id_pregunta INT AUTO_INCREMENT PRIMARY KEY,
+    pregunta VARCHAR(255),
+    id_seccion INT,
+    FOREIGN KEY (id_seccion) REFERENCES secciones(id_seccion)
+);
+
+-- Insertar las preguntas para cada sección
+INSERT INTO preguntas (pregunta, id_seccion) VALUES
+-- Seccion 1
+('Pregunta 1 Seccion 1', 1),
+('Pregunta 2 Seccion 1', 1),
+('Pregunta 3 Seccion 1', 1),
+('Pregunta 4 Seccion 1', 1),
+('Pregunta 5 Seccion 1', 1),
+('Pregunta 6 Seccion 1', 1),
+('Pregunta 7 Seccion 1', 1),
+('Pregunta 8 Seccion 1', 1),
+('Pregunta 9 Seccion 1', 1),
+-- Seccion 2
+('Pregunta 1 Seccion 2', 2),
+('Pregunta 2 Seccion 2', 2),
+('Pregunta 3 Seccion 2', 2),
+('Pregunta 4 Seccion 2', 2),
+('Pregunta 5 Seccion 2', 2),
+('Pregunta 6 Seccion 2', 2),
+('Pregunta 7 Seccion 2', 2),
+('Pregunta 8 Seccion 2', 2),
+('Pregunta 9 Seccion 2', 2),
+-- Seccion 3
+('Pregunta 1 Seccion 3', 3),
+('Pregunta 2 Seccion 3', 3),
+('Pregunta 3 Seccion 3', 3),
+('Pregunta 4 Seccion 3', 3),
+('Pregunta 5 Seccion 3', 3),
+('Pregunta 6 Seccion 3', 3),
+('Pregunta 7 Seccion 3', 3),
+('Pregunta 8 Seccion 3', 3),
+('Pregunta 9 Seccion 3', 3),
+-- Seccion 4
+('Pregunta 1 Seccion 4', 4),
+('Pregunta 2 Seccion 4', 4),
+('Pregunta 3 Seccion 4', 4),
+('Pregunta 4 Seccion 4', 4),
+('Pregunta 5 Seccion 4', 4),
+('Pregunta 6 Seccion 4', 4),
+('Pregunta 7 Seccion 4', 4),
+('Pregunta 8 Seccion 4', 4),
+('Pregunta 9 Seccion 4', 4);
+
+
+-- Crear la tabla para almacenar las respuestas de los perfiles a las preguntas
+CREATE TABLE respuestas (
+    id_respuesta INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    id_pregunta INT,
+    respuesta INT,
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil),
+    FOREIGN KEY (id_pregunta) REFERENCES preguntas(id_pregunta)
+);
+
+-- Crear la tabla para almacenar los puntos totales por sección para cada perfil
+CREATE TABLE puntos_totales_seccion (
+    id_puntos_totales_seccion INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    id_seccion INT,
+    puntos_totales INT,
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil),
+    FOREIGN KEY (id_seccion) REFERENCES secciones(id_seccion)
+);
+
+-- Insertar las secciones restantes
+INSERT INTO secciones (nombre_seccion) VALUES 
+('Seccion 5'),
+('Seccion 6'),
+('Seccion 7'),
+('Seccion 8');
+
+-- Insertar las preguntas para cada sección
+INSERT INTO preguntas (pregunta, id_seccion) VALUES
+-- Seccion 5
+('Pregunta 1 Seccion 5', 5),
+('Pregunta 2 Seccion 5', 5),
+('Pregunta 3 Seccion 5', 5),
+('Pregunta 4 Seccion 5', 5),
+('Pregunta 5 Seccion 5', 5),
+('Pregunta 6 Seccion 5', 5),
+('Pregunta 7 Seccion 5', 5),
+('Pregunta 8 Seccion 5', 5),
+('Pregunta 9 Seccion 5', 5),
+-- Seccion 6
+('Pregunta 1 Seccion 6', 6),
+('Pregunta 2 Seccion 6', 6),
+('Pregunta 3 Seccion 6', 6),
+('Pregunta 4 Seccion 6', 6),
+('Pregunta 5 Seccion 6', 6),
+('Pregunta 6 Seccion 6', 6),
+('Pregunta 7 Seccion 6', 6),
+('Pregunta 8 Seccion 6', 6),
+('Pregunta 9 Seccion 6', 6),
+-- Seccion 7
+('Pregunta 1 Seccion 7', 7),
+('Pregunta 2 Seccion 7', 7),
+('Pregunta 3 Seccion 7', 7),
+('Pregunta 4 Seccion 7', 7),
+('Pregunta 5 Seccion 7', 7),
+('Pregunta 6 Seccion 7', 7),
+('Pregunta 7 Seccion 7', 7),
+('Pregunta 8 Seccion 7', 7),
+('Pregunta 9 Seccion 7', 7),
+-- Seccion 8
+('Pregunta 1 Seccion 8', 8),
+('Pregunta 2 Seccion 8', 8),
+('Pregunta 3 Seccion 8', 8),
+('Pregunta 4 Seccion 8', 8),
+('Pregunta 5 Seccion 8', 8),
+('Pregunta 6 Seccion 8', 8),
+('Pregunta 7 Seccion 8', 8),
+('Pregunta 8 Seccion 8', 8),
+('Pregunta 9 Seccion 8', 8);
+
+CREATE TABLE IF NOT EXISTS comparacion_secciones (
+    id_comparacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    seccion_mayor VARCHAR(50),
+    puntos_seccion_mayor INT,
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil)
+);
+
+USE jun3;
+CREATE TABLE categoria_perfil (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    categoria VARCHAR(100),
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil)
+);

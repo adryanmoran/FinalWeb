@@ -1,0 +1,86 @@
+-- Creación de la base de datos y selección para uso
+CREATE DATABASE IF NOT EXISTS JyV;
+USE JyV;
+
+-- Definición de las tablas
+CREATE TABLE Puestos (
+    id_puesto INT AUTO_INCREMENT PRIMARY KEY,
+    puesto VARCHAR(50)
+);
+
+CREATE TABLE Perfil (
+    id_perfil INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50),
+    apellidoPaterno VARCHAR(50),
+    apellidoMaterno VARCHAR(50),
+    telefono VARCHAR(20),
+    correo_electronico VARCHAR(100),
+    direccion VARCHAR(255),
+    id_puesto INT,
+    FOREIGN KEY (id_puesto) REFERENCES Puestos(id_puesto)
+);
+
+CREATE TABLE Cuestionario_jung (
+    id_cuestionario INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    id_puesto INT,
+    seccion VARCHAR(50),
+    puntos INT,
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil),
+    FOREIGN KEY (id_puesto) REFERENCES Puestos(id_puesto)
+);
+
+CREATE TABLE Categoria_Jung (
+    id_categoria INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    id_puesto INT,
+    categoria VARCHAR(50),
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil),
+    FOREIGN KEY (id_puesto) REFERENCES Puestos(id_puesto)
+);
+
+CREATE TABLE Comparacion_secciones (
+    id_comparacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil INT,
+    id_puesto INT,
+    seccion_mayor VARCHAR(50),
+    puntos_seccion_mayor INT,
+    FOREIGN KEY (id_perfil) REFERENCES Perfil(id_perfil),
+    FOREIGN KEY (id_puesto) REFERENCES Puestos(id_puesto)
+);
+
+CREATE TABLE Preguntas (
+    id_pregunta INT AUTO_INCREMENT PRIMARY KEY,
+    enunciado VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE Opciones_respuesta (
+    id_opcion INT AUTO_INCREMENT PRIMARY KEY,
+    id_pregunta INT NOT NULL,
+    opcion CHAR(1) NOT NULL,
+    respuesta_texto VARCHAR(255) NOT NULL,
+    INDEX id_pregunta_idx (id_pregunta),
+    FOREIGN KEY (id_pregunta) REFERENCES Preguntas(id_pregunta)
+);
+
+CREATE TABLE Respuestas_vark (
+    id_respuesta INT AUTO_INCREMENT PRIMARY KEY,
+    id_persona INT NOT NULL,
+    id_pregunta INT NOT NULL,
+    respuesta CHAR(1) NOT NULL,
+    INDEX id_pregunta_idx (id_pregunta),
+    INDEX id_persona_idx (id_persona),
+    FOREIGN KEY (id_persona) REFERENCES Perfil(id_perfil),
+    FOREIGN KEY (id_pregunta) REFERENCES Preguntas(id_pregunta)
+);
+
+CREATE TABLE Resultado_vark (
+    id_resultado INT AUTO_INCREMENT PRIMARY KEY,
+    id_persona INT NOT NULL,
+    V INT NOT NULL,
+    A INT NOT NULL,
+    R INT NOT NULL,
+    K INT NOT NULL,
+    INDEX id_persona_idx (id_persona),
+    FOREIGN KEY (id_persona) REFERENCES Perfil(id_perfil)
+);

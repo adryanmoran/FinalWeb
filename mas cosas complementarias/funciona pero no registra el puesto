@@ -1,0 +1,283 @@
+from flask import Flask, request, redirect, url_for, render_template, flash
+from sqlalchemy import func
+from model.model import Database, Perfil, Puesto, CuestionarioJung,CategoriaJung,ComparacionSecciones
+
+app = Flask(__name__)
+app.secret_key = 'tu_llave_secreta'
+
+# Configuramos la sesión de SQLAlchemy utilizando la clase Database Singleton
+session_db = Database.get_instance().get_session()
+
+
+
+@app.route('/')
+def index():
+    return redirect(url_for('registrar_perfil'))
+
+@app.route('/registrar_perfil', methods=['GET', 'POST'])
+def registrar_perfil():
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        apellido_paterno = request.form.get('apellido_paterno')
+        apellido_materno = request.form.get('apellido_materno')
+        telefono = request.form.get('telefono')
+        correo = request.form.get('correo')
+        id_puesto = request.form.get('id_puesto')
+
+        if nombre and apellido_paterno and apellido_materno and telefono and correo and id_puesto:
+            try:
+                id_puesto = int(id_puesto)
+                nuevo_perfil = Perfil(
+                    nombre=nombre,
+                    apellidoPaterno=apellido_paterno,
+                    apellidoMaterno=apellido_materno,
+                    telefono=telefono,
+                    correo_electronico=correo,
+                    id_puesto=id_puesto
+                )
+                session_db.add(nuevo_perfil)
+                session_db.commit()
+                flash('Perfil registrado correctamente', 'success')
+                
+               
+                
+                return redirect(url_for('menu_cuestionario', id_perfil=nuevo_perfil.id_perfil))
+            except ValueError:
+                flash('ID de puesto no válido.', 'danger')
+        else:
+            flash('Todos los campos son obligatorios.', 'danger')
+
+    puestos = session_db.query(Puesto).all()
+    return render_template('registrar_perfil.html', puestos=puestos)
+
+
+@app.route('/menu_cuestionario/<int:id_perfil>')
+def menu_cuestionario(id_perfil):
+    perfil = session_db.query(Perfil).filter_by(id_perfil=id_perfil).first()
+    return render_template('menu_cuestionario.html', perfil=perfil)
+
+@app.route('/menu_secciones')
+def menu_secciones():
+    return render_template('menu_secciones.html')
+
+def obtener_perfil(id_perfil=None):
+    if id_perfil is not None:
+        return session_db.query(Perfil).filter_by(id_perfil=id_perfil).first()
+    
+    max_id_perfil = session_db.query(func.max(Perfil.id_perfil)).scalar()
+    if max_id_perfil:
+        return session_db.query(Perfil).filter_by(id_perfil=max_id_perfil).first()
+    return None
+
+def obtener_puesto(id_puesto=None):
+    if id_puesto is not None:
+        return session_db.query(Puesto).filter_by(id_puesto=id_puesto).first()
+    
+    max_id_puesto = session_db.query(func.max(Puesto.id_puesto)).scalar()
+    if max_id_puesto:
+        return session_db.query(Puesto).filter_by(id_puesto=max_id_puesto).first()
+    return None
+
+def guardar_cuestionario_jung(seccion1_suma, seccion2_suma, id_perfil, id_puesto):
+    if seccion1_suma > seccion2_suma:
+        seccion = "Sección 1"
+        mayor_puntuacion = seccion1_suma
+    else:
+        seccion = "Sección 2"
+        mayor_puntuacion = seccion2_suma
+    
+    cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion=seccion, puntos=mayor_puntuacion)
+    session_db.add(cuestionario)
+    session_db.commit()
+    
+@app.route('/Seccion1_2')
+def seccion_1_2():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion1_2.html', perfil=perfil, puesto=puesto)
+
+@app.route('/sumar_secciones', methods=['POST'])
+def sumar_secciones():
+    seccion1_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(1, 10)])
+    seccion2_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(10, 19)])
+
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    if id_perfil and id_puesto:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_jung(seccion1_suma, seccion2_suma, id_perfil, id_puesto)
+            return redirect(url_for('seccion_3_4'))
+        except ValueError:
+            flash("ID de perfil o puesto no son valores enteros.", 'danger')
+    else:
+        flash("No se proporcionaron ID de perfil o puesto.", 'danger')
+
+    return redirect(url_for('seccion_1_2'))
+
+@app.route('/Seccion3_4')
+def seccion_3_4():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion3_4.html', perfil=perfil, puesto=puesto)
+
+def guardar_cuestionario_seccion3_4(seccion3_suma, seccion4_suma, id_perfil, id_puesto):
+    if seccion3_suma > seccion4_suma:
+        seccion = "Sección 3"
+        mayor_puntuacion = seccion3_suma
+    else:
+        seccion = "Sección 4"
+        mayor_puntuacion = seccion4_suma
+    
+    cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion=seccion, puntos=mayor_puntuacion)
+    session_db.add(cuestionario)
+    session_db.commit()
+
+@app.route('/sumar_secciones3_4', methods=['POST'])
+def sumar_secciones3_4():
+    seccion3_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(1, 10)])
+    seccion4_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(10, 19)])
+
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    if id_perfil and id_puesto:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_seccion3_4(seccion3_suma, seccion4_suma, id_perfil, id_puesto)
+            return redirect(url_for('seccion_5_6'))
+        except ValueError:
+            flash("ID de perfil o puesto no son valores enteros.", 'danger')
+    else:
+        flash("No se proporcionaron ID de perfil o puesto.", 'danger')
+
+    return redirect(url_for('seccion_3_4'))
+
+@app.route('/Seccion5_6')
+def seccion_5_6():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion5_6.html', perfil=perfil, puesto=puesto)
+
+def guardar_cuestionario_seccion5_6(seccion5_suma, seccion6_suma, id_perfil, id_puesto):
+    if seccion5_suma > seccion6_suma:
+        seccion = "Sección 5"
+        mayor_puntuacion = seccion5_suma
+    else:
+        seccion = "Sección 6"
+        mayor_puntuacion = seccion6_suma
+    
+    cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion=seccion, puntos=mayor_puntuacion)
+    session_db.add(cuestionario)
+    session_db.commit()
+
+@app.route('/sumar_secciones5_6', methods=['POST'])
+def sumar_secciones5_6():
+    seccion5_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(37, 46)])
+    seccion6_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(46, 55)])
+
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    if id_perfil and id_puesto:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_seccion5_6(seccion5_suma, seccion6_suma, id_perfil, id_puesto)
+            return redirect(url_for('seccion_7_8'))
+        except ValueError:
+            flash("ID de perfil o puesto no son valores enteros.", 'danger')
+    else:
+        flash("No se proporcionaron ID de perfil o puesto.", 'danger')
+
+    return redirect(url_for('seccion_5_6'))
+
+@app.route('/Seccion7_8')
+def seccion_7_8():
+    perfil = obtener_perfil()
+    puesto = obtener_puesto()
+    return render_template('seccion7_8.html', perfil=perfil, puesto=puesto)
+
+def guardar_cuestionario_seccion7_8(seccion7_suma, seccion8_suma, id_perfil, id_puesto):
+    if seccion7_suma > seccion8_suma:
+        seccion = "Sección 7"
+        mayor_puntuacion = seccion7_suma
+    else:
+        seccion = "Sección 8"
+        mayor_puntuacion = seccion8_suma
+    
+    cuestionario = CuestionarioJung(id_perfil=id_perfil, id_puesto=id_puesto, seccion=seccion, puntos=mayor_puntuacion)
+    session_db.add(cuestionario)
+    session_db.commit()
+
+@app.route('/sumar_secciones7_8', methods=['POST'])
+def sumar_secciones7_8():
+    seccion7_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(55, 64)])
+    seccion8_suma = sum([int(request.form.get(f'pregunta{i}', 0)) for i in range(64, 73)])
+
+    id_perfil = request.form.get('id_perfil')
+    id_puesto = request.form.get('id_puesto')
+
+    if id_perfil and id_puesto:
+        try:
+            id_perfil = int(id_perfil)
+            id_puesto = int(id_puesto)
+            guardar_cuestionario_seccion7_8(seccion7_suma, seccion8_suma, id_perfil, id_puesto)
+            asignar_categoria_perfil_actual(id_perfil)
+
+            return redirect(url_for('resultados'))
+        except ValueError:
+            flash("ID de perfil o puesto no son valores enteros.", 'danger')
+    else:
+        flash("No se proporcionaron ID de perfil o puesto.", 'danger')
+
+    return redirect(url_for('seccion_7_8'))
+
+@app.route('/resultados')
+def resultados():
+    perfil = obtener_perfil()  # Obtener el perfil del último registro
+    puesto = obtener_puesto()  # Obtener el puesto del último registro
+    cuestionarios = session_db.query(CuestionarioJung).filter_by(id_perfil=perfil.id_perfil).all()  # Obtener los cuestionarios para ese perfil
+
+    return render_template('resultados.html', perfil=perfil, puesto=puesto, cuestionarios=cuestionarios)
+
+
+
+def asignar_categoria_perfil_actual(id_perfil):
+    # Obtener todos los cuestionarios asociados al perfil actual
+    cuestionarios = session_db.query(CuestionarioJung).filter_by(id_perfil=id_perfil).all()
+    
+    # Diccionario para contar las apariciones de cada sección
+    secciones_count = {"Sección 1": 0, "Sección 2": 0, "Sección 3": 0, "Sección 4": 0, "Sección 5": 0, "Sección 6": 0, "Sección 7": 0, "Sección 8": 0}
+    
+    # Contar las apariciones de cada sección
+    for cuestionario in cuestionarios:
+        secciones_count[cuestionario.seccion] += 1
+    
+    # Determinar la sección más frecuente
+    seccion_mas_frecuente = max(secciones_count, key=secciones_count.get)
+    
+    # Asignar categoría basada en la sección más frecuente
+    if seccion_mas_frecuente in ["Sección 3", "Sección 6"]:
+        categoria = "Apoyo"
+    elif seccion_mas_frecuente in ["Sección 4", "Sección 5"]:
+        categoria = "Técnico analítico"
+    elif seccion_mas_frecuente in ["Sección 1", "Sección 2"]:
+        categoria = "Controlador"
+    elif seccion_mas_frecuente in ["Sección 7", "Sección 8"]:
+        categoria = "Social"
+    else:
+        categoria = None
+    
+    # Insertar la categoría en la tabla CategoriaJung
+    if categoria:
+        nuevo_categoria = CategoriaJung(id_perfil=id_perfil, categoria=categoria)
+        session_db.add(nuevo_categoria)
+        session_db.commit()
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
