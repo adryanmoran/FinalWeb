@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Reproductor de Video{% endblock %}
+
+{% block content %}
+    <style>
+        /* Centraliza el contenido */
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        /* Estiliza el título */
+        .video-container h1 {
+            font-family: 'Arial', sans-serif;
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Ajusta el tamaño y la apariencia del iframe */
+        .video-frame iframe {
+            width: 100%;
+            max-width: 600px;
+            height: 338px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+
+        /* Ajusta el contenedor del video */
+        .video-frame {
+            width: 100%;
+            max-width: 600px;
+            overflow: hidden;
+        }
+    </style>
+    <div class="video-container">
+        <h1>Reproductor de Video</h1>
+        <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/QuKGsPMpb9E" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+{% endblock %}
